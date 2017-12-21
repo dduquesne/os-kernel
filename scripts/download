@@ -1,0 +1,24 @@
+#!/bin/bash
+set -e
+set -x
+
+cd $(dirname $0)/..
+
+source scripts/build-common
+
+mkdir -p ${ARTIFACTS}
+cd ${ARTIFACTS}
+
+if [ ! -e "${KERNEL_TAR}" ]; then
+    curl -sL ${KERNEL_URL}${KERNEL_TAR} > ${KERNEL_TAR}
+fi
+curl -sL ${KERNEL_URL}${KERNEL_SIGN} > ${KERNEL_SIGN}
+
+# grab gregkh's stable signing key 
+gpg2 --keyserver hkp://keys.gnupg.net --recv-keys 6092693E
+
+if ! xz -cd ${KERNEL_TAR} | gpg2 --verify ${KERNEL_SIGN} - ; then
+    echo "ERROR: ${KERNEL_TAR} signing error" 1>&2
+    exit 1
+fi
+echo "${KERNEL_TAR} probably ok"
